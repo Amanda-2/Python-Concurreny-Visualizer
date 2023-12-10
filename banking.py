@@ -12,6 +12,7 @@ import visualize
 import time
 import threading
 
+main = visualize.main_thread()
 # lock = visualize.lock("depositLock")
 lock = visualize.lock("depositLock")
 deposit = 100
