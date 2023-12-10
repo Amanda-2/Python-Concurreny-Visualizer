@@ -11,6 +11,7 @@ import argparse
 import threading
 import datetime
 
+# DEPRECATED, DO  NOT USE
 class VisualizeThread (threading.Thread):
     def __init__(self, name, target, args=(), kwargs={}):
         print("VisualizeThread init")
