@@ -12,54 +12,41 @@ import threading
 import datetime
 import time
 
-
 class create_thread():
     def __init__(self, name:str, target, args=()):
         # print("break 1")
         self.thread = threading.Thread(name=name, target=target, args=args)
         # print("break 2")
         self.thread.start()
-        self.printArray = []
-        if os.path.exists(self.thread.name):
-            file = open(self.thread.name, "w")
-        else:
-            file = open(self.thread.name, "a")
-        self.file = file
         # print("break 3")
         # print(threading.current_thread())
         # print(self.thread.is_alive())
-        self.watchThread = threading.Thread(target=watch_thread, args=(self,))
+        self.watchThread = threading.Thread(target=watch_thread, args=(self.thread,))
         self.watchThread.start()
 
     def join(self):
         self.thread.join()
 
-def watch_thread(thread: create_thread):
+def watch_thread(thread: threading.Thread):
+    if os.path.exists(thread.name):
+        file = open(thread.name, "w", 1)
+    else:
+        file = open(thread.name, "a", 1)
     now = datetime.datetime.now().strftime('%H:%M:%S')
-    # file.write("Thread initialized at time " + now + "\n")
-    # file.write("ID: " + str(thread.ident) + "\n")
-    # file.write("Name of function: " + thread.name + "\n")
-    # file.flush()
-    thread.printArray.append("Thread initialized at time " + now + "\n")
-    thread.printArray.append("ID: " + str(thread.thread.ident) + "\n")
-    thread.printArray.append("Name of function: " + thread.thread.name + "\n")
+    file.write("Thread initialized at time " + now + "\n")
+    file.write("ID: " + str(thread.ident) + "\n")
+    file.write("Name of function: " + thread.name + "\n")
+    file.flush()
     
-    while(thread.thread.is_alive()):
+    while(thread.is_alive()):
         time.sleep(0.5)
-        # file.write("Executing\n")
-        # file.flush()
-        thread.printArray.append("Executing\n")
+        file.write("Executing\n")
+        file.flush()
 
     now = datetime.datetime.now().strftime('%H:%M:%S')
-    # file.write("Thread ended at time " + now + "\n")
-    # file.flush()
-    # file.close
-    thread.printArray.append("Thread ended at time " + now + "\n")
-    thread.file.flush()
-    for line in thread.printArray:
-        thread.file.write(line)
-    thread.file.flush()
-    thread.file.close()
+    file.write("Thread ended at time " + now + "\n")
+    file.flush()
+    file.close
 
 class lock():
     def __init__(self, name):
@@ -69,7 +56,7 @@ class lock():
         # # self.lock = threading.Lock()
         self.name = name
         # self.finalArray = []
-        file = open(threadName, "a")
+        file = open(threadName, "a", 1)
         creationMsg = "Lock with name " + self.name + " created by "
         creationMsg += threadName + "\n"
         file.write(creationMsg)
@@ -82,7 +69,7 @@ class lock():
         msg = "Lock with name " + self.name + " requested by "
         msg += currentThread + " at " + now + "\n"
         # self.finalArray.append((currentThread, msg))
-        file = open(currentThread, "a")
+        file = open(currentThread, "a", 1)
         file.write(msg)
         file.flush()
         
@@ -101,7 +88,7 @@ class lock():
         msg = "Lock with name " + self.name + " attempted release by "
         msg += currentThread + " at " + now + "\n"
         # self.finalArray.append((currentThread, msg))
-        file = open(currentThread, "a")
+        file = open(currentThread, "a", 1)
         file.write(msg)
         file.flush()
         
