@@ -1,0 +1,52 @@
+Thread initialized at time 21:51:12
+ID: 62424
+Name of function: add_profit
+Executing
+Executing
+Executing
+Executing
+Executing
+Executing
+Executing
+Executing
+Executing
+Executing
+Executing
+Thread ended at time 21:51:17
+ased by add_profit at 21:51:12
+Lock with name depositLock requested by add_profit at 21:51:12
+Lock with name depositLock acquired by add_profit at 21:51:12
+Lock with name depositLock attempted release by add_profit at 21:51:13
+Lock with name depositLock released by add_profit at 21:51:13
+Lock with name depositLock requested by add_profit at 21:51:13
+Lock with name depositLock acquired by add_profit at 21:51:13
+Lock with name depositLock attempted release by add_profit at 21:51:13
+Lock with name depositLock released by add_profit at 21:51:13
+Lock with name depositLock requested by add_profit at 21:51:13
+Lock with name depositLock acquired by add_profit at 21:51:13
+Lock with name depositLock attempted release by add_profit at 21:51:14
+Lock with name depositLock released by add_profit at 21:51:14
+Lock with name depositLock requested by add_profit at 21:51:14
+Lock with name depositLock acquired by add_profit at 21:51:14
+Lock with name depositLock attempted release by add_profit at 21:51:14
+Lock with name depositLock released by add_profit at 21:51:14
+Lock with name depositLock requested by add_profit at 21:51:14
+Lock with name depositLock acquired by add_profit at 21:51:14
+Lock with name depositLock attempted release by add_profit at 21:51:15
+Lock with name depositLock released by add_profit at 21:51:15
+Lock with name depositLock requested by add_profit at 21:51:15
+Lock with name depositLock acquired by add_profit at 21:51:15
+Lock with name depositLock attempted release by add_profit at 21:51:15
+Lock with name depositLock released by add_profit at 21:51:15
+Lock with name depositLock requested by add_profit at 21:51:15
+Lock with name depositLock acquired by add_profit at 21:51:15
+Lock with name depositLock attempted release by add_profit at 21:51:16
+Lock with name depositLock released by add_profit at 21:51:16
+Lock with name depositLock requested by add_profit at 21:51:16
+Lock with name depositLock acquired by add_profit at 21:51:16
+Lock with name depositLock attempted release by add_profit at 21:51:16
+Lock with name depositLock released by add_profit at 21:51:16
+Lock with name depositLock requested by add_profit at 21:51:16
+Lock with name depositLock acquired by add_profit at 21:51:16
+Lock with name depositLock attempted release by add_profit at 21:51:17
+Lock with name depositLock released by add_profit at 21:51:17

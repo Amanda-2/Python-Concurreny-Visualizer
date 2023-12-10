@@ -1,0 +1,52 @@
+Thread initialized at time 21:51:12
+ID: 58544
+Name of function: deduct_bill
+Executing
+Executing
+Executing
+Executing
+Executing
+Executing
+Executing
+Executing
+Executing
+Executing
+Executing
+Thread ended at time 21:51:17
+ with name depositLock released by deduct_bill at 21:51:12
+Lock with name depositLock requested by deduct_bill at 21:51:12
+Lock with name depositLock acquired by deduct_bill at 21:51:13
+Lock with name depositLock attempted release by deduct_bill at 21:51:13
+Lock with name depositLock released by deduct_bill at 21:51:13
+Lock with name depositLock requested by deduct_bill at 21:51:13
+Lock with name depositLock acquired by deduct_bill at 21:51:13
+Lock with name depositLock attempted release by deduct_bill at 21:51:13
+Lock with name depositLock released by deduct_bill at 21:51:13
+Lock with name depositLock requested by deduct_bill at 21:51:13
+Lock with name depositLock acquired by deduct_bill at 21:51:14
+Lock with name depositLock attempted release by deduct_bill at 21:51:14
+Lock with name depositLock released by deduct_bill at 21:51:14
+Lock with name depositLock requested by deduct_bill at 21:51:14
+Lock with name depositLock acquired by deduct_bill at 21:51:14
+Lock with name depositLock attempted release by deduct_bill at 21:51:14
+Lock with name depositLock released by deduct_bill at 21:51:14
+Lock with name depositLock requested by deduct_bill at 21:51:14
+Lock with name depositLock acquired by deduct_bill at 21:51:15
+Lock with name depositLock attempted release by deduct_bill at 21:51:15
+Lock with name depositLock released by deduct_bill at 21:51:15
+Lock with name depositLock requested by deduct_bill at 21:51:15
+Lock with name depositLock acquired by deduct_bill at 21:51:15
+Lock with name depositLock attempted release by deduct_bill at 21:51:15
+Lock with name depositLock released by deduct_bill at 21:51:15
+Lock with name depositLock requested by deduct_bill at 21:51:15
+Lock with name depositLock acquired by deduct_bill at 21:51:16
+Lock with name depositLock attempted release by deduct_bill at 21:51:16
+Lock with name depositLock released by deduct_bill at 21:51:16
+Lock with name depositLock requested by deduct_bill at 21:51:16
+Lock with name depositLock acquired by deduct_bill at 21:51:16
+Lock with name depositLock attempted release by deduct_bill at 21:51:16
+Lock with name depositLock released by deduct_bill at 21:51:16
+Lock with name depositLock requested by deduct_bill at 21:51:16
+Lock with name depositLock acquired by deduct_bill at 21:51:17
+Lock with name depositLock attempted release by deduct_bill at 21:51:17
+Lock with name depositLock released by deduct_bill at 21:51:17
