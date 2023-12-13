@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Concurrency Visualizer</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.9/build/dat.gui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"
+        integrity="sha512-+Ru50BzEpZjlFzVnjSmJfYFPFfY2hS0Kjlu/IvqaJoux7maF5lJrRVUJWJ2LevPls7rd242GLbWEt+zAo4OVVQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.159.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.159.0/examples/jsm/"
+            }
+        }
+    </script>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container"></div>
+    <div id="tooltip"
+        style="position: absolute; display: none; background: white; border: 1px solid black; padding: 5px; pointer-events: none;">
+    </div>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CatmullRomCurve3, TubeGeometry, MeshBasicMaterial, Mesh } from 'three';
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(5, 5, 5);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0xeeeeee);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // You can experiment with different types
+
+        document.getElementById('container').appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let intersectedObject;
+
+        const gui = new dat.GUI();
+        const params = {
+            lineThickness: 3,
+            animationSpeed: 1,
+            currentTime: 0
+        };
+        gui.add(params, 'lineThickness', 1, 10)
+        gui.add(params, 'animationSpeed', 0.1, 5);
+        let currentTimeControl = gui.add(params, 'currentTime', 0, 10);
+        currentTimeControl.onChange(() => {
+            // clearScene();
+            loadAndUpdateVisualization();
+        });
+
+        let lastUpdate = Date.now();
+        const fileUrl = new URLSearchParams(window.location.search).get('file');
+        if (fileUrl) {
+            setInterval(loadAndUpdateVisualization, 1000); // Refresh every 1 second
+        }
+
+        function loadAndUpdateVisualization() {
+            fetch(fileUrl)
+                .then(response => response.text())
+                .then(data => {
+                    createVisualization(data);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        function clearScene() {
+            while (scene.children.length > 0) {
+                const object = scene.children[0];
+                if (object.geometry) object.geometry.dispose();
+                if (object.material) object.material.dispose();
+                scene.remove(object);
+            }
+
+            // Ambient Light
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1); // soft white light
+            scene.add(ambientLight);
+
+            // Directional Light
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.copy(camera.position);
+            directionalLight.castShadow = true; // Enable shadows for the light
+            scene.add(directionalLight);
+
+            // Optional: Set up shadow properties for the directional light
+            directionalLight.shadow.mapSize.width = 512; // Default
+            directionalLight.shadow.mapSize.height = 512; // Default
+            directionalLight.shadow.camera.near = 0.5; // Default
+            directionalLight.shadow.camera.far = 500; // Default
+        }
+
+        function createVisualization(data) {
+            const lines = data.split('\n');
+            let events = {};
+
+            // Parse and organize data by ID
+            lines.forEach(line => {
+                const [time, id, x, y, z, text] = line.split(',');
+                if (!events[id]) {
+                    events[id] = [];
+                }
+                events[id].push({ time: parseFloat(time), point: new THREE.Vector3(parseFloat(x), parseFloat(y), parseFloat(z)), text });
+            });
+
+            // Sort events by time for each ID and create geometries
+            clearScene();
+            Object.keys(events).forEach(id => {
+                events[id].sort((a, b) => a.time - b.time);
+                createLineAndSpheres(events[id], id);
+            });
+        }
+
+        function createLineAndSpheres(eventData, id) {
+            if (eventData.length < 1) {
+                // Need at least one point to create a tube
+                return;
+            }
+
+            function getRandomColor(id) {
+                const rng = new Math.seedrandom(id);
+                const color = Math.floor(rng() * 0xFFFFFF); // Generate a random integer color
+                return `#${color.toString(16).padStart(6, '0')}`; // Convert to hexadecimal format
+            }
+
+            // Interpolate the position for the last point of the tube
+            let lastPointIndex = eventData.findIndex(event => event.time > params.currentTime);
+            lastPointIndex = (lastPointIndex === -1) ? eventData.length - 1 : Math.max(0, lastPointIndex - 1);
+
+            const points = eventData.slice(0, lastPointIndex + 1).map(event => event.point);
+            if (lastPointIndex < eventData.length - 1) {
+                const nextPoint = eventData[lastPointIndex + 1].point;
+                const currentPoint = eventData[lastPointIndex].point;
+                let alpha = (params.currentTime - eventData[lastPointIndex].time) / (eventData[lastPointIndex + 1].time - eventData[lastPointIndex].time);
+                alpha = Math.max(0, alpha)
+                const interpolatedPoint = currentPoint.clone().lerp(nextPoint, alpha);
+                points.push(interpolatedPoint);
+            }
+
+            const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0);
+            const tubeGeometry = new THREE.TubeGeometry(curve, points.length * 2, params.lineThickness / 100, 8, false);
+            const tubeMaterial = new THREE.MeshPhongMaterial({
+                color: getRandomColor(id)
+                // specular: 0x050505,
+                // shininess: 100
+            });
+            const tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
+            tube.userData = { text: "ID: " + id };
+            tube.castShadow = true;
+            tube.receiveShadow = true;
+            scene.add(tube);
+
+            // Create spheres only for past events
+            eventData.forEach(event => {
+                if (event.time <= params.currentTime) {
+                    const sphereGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+                    const sphereMaterial = new THREE.MeshPhongMaterial({ color: tubeMaterial.color });
+                    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                    sphere.position.copy(event.point);
+                    sphere.userData = { text: event.text };
+                    sphere.castShadow = true;
+                    sphere.receiveShadow = true;
+                    scene.add(sphere);
+                }
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update currentTime based on animationSpeed
+            params.currentTime += params.animationSpeed * 0.01;
+
+            // Loop currentTime within the range 0 to 10
+            if (params.currentTime > 10 || params.currentTime < 0) {
+                params.animationSpeed *= -1; // Reverse the direction when reaching the boundary
+            }
+
+            // Update currentTime in GUI and refresh scene
+            currentTimeControl.setValue(params.currentTime);
+
+            controls.update();
+            renderer.render(scene, camera);
+            // log items
+        }
+
+        let selectedObject = null;
+        let originalColor = null;
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            if (intersects.length > 0) {
+                if (selectedObject !== intersects[0].object) {
+                    if (selectedObject && originalColor !== null) {
+                        selectedObject.material.color.set(originalColor);
+                    }
+
+                    selectedObject = intersects[0].object;
+                    originalColor = selectedObject.material.color.getHex();
+                    selectedObject.material.color.set(0xff0000);
+
+                    // Update tooltip position and content
+                    updateTooltip(selectedObject);
+
+                }
+            } else {
+                if (selectedObject && originalColor !== null) {
+                    selectedObject.material.color.set(originalColor);
+                    selectedObject = null;
+                    originalColor = null;
+                    tooltip.style.display = 'none';
+                }
+            }
+            tooltip.style.left = event.clientX + 20 + 'px';
+            tooltip.style.top = event.clientY + 20 + 'px';
+        }
+        window.addEventListener('mousemove', onMouseMove, false);
+
+        function updateTooltip(object) {
+            const vector = new THREE.Vector3();
+            object.getWorldPosition(vector);
+            vector.project(camera);
+
+            vector.x = (vector.x * 0.5 + 0.5) * container.clientWidth;
+            vector.y = -(vector.y * 0.5 - 0.5) * container.clientHeight;
+
+
+            tooltip.style.display = 'block';
+            tooltip.style.left = `${vector.x}px`;
+            tooltip.style.top = `${vector.y}px`;
+            tooltip.innerHTML = object.userData.text;
+        }
+
+        const container = document.getElementById('container');
+        const tooltip = document.getElementById('tooltip');
+
+
+
+        window.addEventListener('resize', onWindowResize, false);
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        animate();
+    </script>
+
+</body>
+
+</html>

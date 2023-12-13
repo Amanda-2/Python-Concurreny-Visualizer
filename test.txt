@@ -1,0 +1,6 @@
+1.0, A, 0, 0, 0, "Event A1 at time 1.0"
+2.0, A, 1, 1, 0, "Event A2 at time 2.0"
+3.0, A, 2, 1, 1, "Event A3 at time 3.0"
+1.5, B, 1, 0, 0, "Event B1 at time 1.5"
+2.5, B, 1, 1, 1, "Event B2 at time 2.5"
+3.5, B, 0, 1, 2, "Event B3 at time 3.5"
