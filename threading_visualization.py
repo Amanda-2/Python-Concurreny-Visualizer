@@ -10,12 +10,9 @@ from logging_config import setup_logging
 # Setup logging using command-line arguments
 def get_args():
     parser = argparse.ArgumentParser(description='Setup logging for the application.')
-    parser.add_argument('--file', type=str, default='Concurrency.log', help='Log file name')
-    parser.add_argument('--port', type=int, default=12345, help='Socket logging port')
+    parser.add_argument('-f', '--file', type=str, default='Concurrency.log', help='Log file name')
+    parser.add_argument('-p', '--port', type=int, default=12345, help='Host port')
     return parser.parse_args()
-
-args = get_args()
-logger = setup_logging(args.file, args.port)
 
 def current_time():
     return time.time_ns()
@@ -23,8 +20,10 @@ def current_time():
 def custom_log(time, ident, textDescriptionWithName):
     logger.info(f"{time}, {ident}, {threading.current_thread().ident}, {textDescriptionWithName}")
 
+
 class MainThread:
-    def __init__(self, silence=False):
+    def __init__(self, file="Concurrency.log", port=8000, silence=False):
+        setup_logger(file, port)
         self.silence = silence
         self.thread = threading.current_thread()
         if not self.silence:
@@ -183,3 +182,17 @@ class Barrier:
 
     def broken(self):
         return self.barrier.broken
+    
+
+def main():
+    args = get_args()
+    setup_logger(args.file, args.port)
+
+logger = None
+
+def setup_logger(file="Concurrency.log", port=8000):
+    global logger
+    logger = setup_logging(file, port)
+
+if __name__ == "__main__":
+    main()

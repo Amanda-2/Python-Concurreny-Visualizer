@@ -10,9 +10,8 @@ def worker_task(lock, worker_name, sleep_time):
     print(f"{time.time_ns()}, {worker_name}: Finished working.")
 
 def main(n, sleep_time):
-    lock = Lock("shared_lock")
-
-    with MainThread():
+    with MainThread(file="Workers.log"):
+        lock = Lock("shared_lock")
         workers = []
         for i in range(n):
             worker_name = f"Worker{i + 1}"
@@ -25,8 +24,8 @@ def main(n, sleep_time):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run worker threads with shared lock.')
-    parser.add_argument('--num_workers', type=int, default=50, help='Number of worker threads')
-    parser.add_argument('--sleep_time', type=int, default=0.0001, help='Sleep time for each worker (in seconds)')
+    parser.add_argument('--num_workers', type=int, default=500, help='Number of worker threads')
+    parser.add_argument('--sleep_time', type=int, default=0.01, help='Sleep time for each worker (in seconds)')
     args = parser.parse_args()
 
     main(args.num_workers, args.sleep_time)
