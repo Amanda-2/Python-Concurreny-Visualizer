@@ -281,7 +281,7 @@
                 const tubeGeometry = new THREE.TubeGeometry(curve, points.length * 2, params.lineThickness / 100, 8, false);
                 const tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
                 tube.userData = {
-                    text: "Object in which:<br><br>" + eventData.reduce(
+                    text: "<b>Logical path:</b><br>" + eventData.reduce(
                         (acc, curr) => acc + curr.text + "<br>", "")
                 };
                 tube.castShadow = true;
@@ -325,8 +325,8 @@
             // Update currentTime in GUI and refresh scene
             currentTimeControl.setValue(params.currentTime);
             // controls.update(0.3);
-            renderer.render(scene, camera);
             tt();
+            renderer.render(scene, camera);
             // log items
         }
 
@@ -338,10 +338,17 @@
 
             if (intersects.length > 0) {
                 // Aggregate text from all intersected objects sorted by time
+                intersects.map(intersected => {
+                    let mesh = intersected.object
+                    mesh.material = new THREE.MeshBasicMaterial({
+                        color: 0xff0000
+                    })
+                    return intersected
+                })
                 const tooltipText = intersects
                     .map(intersected => intersected.object.userData.text)
                     .sort((a, b) => b.time - a.time)
-                    .filter((text, index, self) => self.indexOf(text) === index)
+                    // .filter((text, index, self) => self.indexOf(text) === index)
                     .join('<br>');
                 // filter out duplicate
                 // Update tooltip position and content

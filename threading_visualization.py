@@ -4,6 +4,7 @@
 import argparse
 import threading
 import time
+import uuid
 from logging_config import setup_logging
 
 # Setup logging using command-line arguments
@@ -23,28 +24,34 @@ def custom_log(time, ident, textDescriptionWithName):
     logger.info(f"{time}, {ident}, {threading.current_thread().ident}, {textDescriptionWithName}")
 
 class MainThread:
-    def __init__(self):
+    def __init__(self, silence=False):
+        self.silence = silence
         self.thread = threading.current_thread()
-        custom_log(current_time(), threading.current_thread().ident, 'Main thread initialized')
+        if not self.silence:
+            custom_log(current_time(), threading.current_thread().ident, 'Main thread initialized')
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        custom_log(current_time(), threading.current_thread().ident, 'Main thread ended')
+        if not self.silence:
+            custom_log(current_time(), threading.current_thread().ident, 'Main thread ended')
 
 class Thread:
-    def __init__(self, name, target, args=()):
+    def __init__(self, target, name='Thread_'+str(uuid.uuid4()), silence=False, args=()):
+        self.silence = silence
         self.thread = threading.Thread(name=name, target=target, args=args)
         # custom_log(current_time(), 'MainThread', threading.current_thread().ident, f"'{name} thread initialized'")
 
     def start(self):
         self.thread.start()
-        custom_log(current_time(), self.thread.ident, f"'{self.thread.name}' thread started")
+        if not self.silence:
+            custom_log(current_time(), self.thread.ident, f"'{self.thread.name}' thread started")
 
     def join(self):
         self.thread.join()
-        custom_log(current_time(), self.thread.ident, f"'{self.thread.name}' thread joined")
+        if not self.silence:
+            custom_log(current_time(), self.thread.ident, f"'{self.thread.name}' thread joined")
 
     @property
     def ident(self):
@@ -55,15 +62,18 @@ class Thread:
         return self.thread.name
  
 class Lock:
-    def __init__(self, name):
+    def __init__(self, name='Lock_'+str(uuid.uuid4()),silence=False):
         self.lock = threading.Lock()
         self.name = name
-        custom_log(current_time(), self.name, f"Lock '{self.name}' created")
+        self.silence = silence
+        if not self.silence:
+            custom_log(current_time(), self.name, f"Lock '{self.name}' created")
 
     def acquire(self):
         # custom_log(current_time(), self.name, f"Lock '{self.name}' acquire request")
         self.lock.acquire()
-        custom_log(current_time(), self.name, f"Lock '{self.name}' acquired")
+        if not self.silence:
+            custom_log(current_time(), self.name, f"Lock '{self.name}' acquired")
 
     def release(self):
         custom_log(current_time(), self.name, f"Lock '{self.name}' released")
@@ -71,22 +81,26 @@ class Lock:
         # custom_log(current_time(), self.name, f"Lock '{self.name}' released")
 
 class Event:
-    def __init__(self, name):
+    def __init__(self, name='Event_'+str(uuid.uuid4()),silence=False):
         self.event = threading.Event()
         self.name = name
+        self.silence = silence
         # custom_log(current_time(), self.name, f"Event {self.name} created")
 
     def set(self):
         self.event.set()
-        custom_log(current_time(), self.name, f"Event {self.name} set")
+        if not self.silence:
+            custom_log(current_time(), self.name, f"Event {self.name} set")
 
     def clear(self):
         self.event.clear()
-        custom_log(current_time(), self.name, f"Event {self.name} cleared")
+        if not self.silence:
+            custom_log(current_time(), self.name, f"Event {self.name} cleared")
 
     def wait(self, timeout=None):
         wait_result = self.event.wait(timeout)
-        custom_log(current_time(), self.name, f"Event {self.name} wait, result: {wait_result}")
+        if not self.silence:
+            custom_log(current_time(), self.name, f"Event {self.name} wait, result: {wait_result}")
         return wait_result
 
     def is_set(self):
@@ -95,59 +109,71 @@ class Event:
         return is_set
 
 class Condition:
-    def __init__(self, name):
+    def __init__(self, name='Condition_'+str(uuid.uuid4()),silence=False):
         self.condition = threading.Condition()
         self.name = name
+        self.silence = silence
         # custom_log(current_time(), self.name, f"Condition {self.name} created")
 
     def __enter__(self):
         self.condition.acquire()
-        custom_log(current_time(),  self.name, f"Condition {self.name} lock acquired by thread")
+        if not self.silence:
+            custom_log(current_time(),  self.name, f"Condition {self.name} lock acquired by thread")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        custom_log(current_time(),  self.name, f"Condition {self.name} lock released by thread")
+        if not self.silence:
+            custom_log(current_time(),  self.name, f"Condition {self.name} lock released by thread")
         self.condition.release()
 
     def acquire(self):
         self.condition.acquire()
-        custom_log(current_time(), self.name, f"Condition {self.name} lock acquired")
+        if not self.silence:
+            custom_log(current_time(), self.name, f"Condition {self.name} lock acquired")
 
     def release(self):
-        custom_log(current_time(),  self.name, f"Condition {self.name} lock released")
+        if not self.silence:
+            custom_log(current_time(),  self.name, f"Condition {self.name} lock released")
         self.condition.release()
 
     def wait(self, timeout=None):
-        custom_log(current_time(),  self.name, f"Condition {self.name} wait")
+        if not self.silence:
+            custom_log(current_time(),  self.name, f"Condition {self.name} wait")
         self.condition.wait(timeout)
 
     def notify(self):
         self.condition.notify()
-        custom_log(current_time(), self.name, f"Condition {self.name} notify")
+        if not self.silence:
+            custom_log(current_time(), self.name, f"Condition {self.name} notify")
 
     def notify_all(self):
         self.condition.notify_all()
-        custom_log(current_time(),  self.name, f"Condition {self.name} notify_all")
+        if not self.silence:
+            custom_log(current_time(),  self.name, f"Condition {self.name} notify_all")
 
 class Barrier:
-    def __init__(self, parties, name):
+    def __init__(self, parties, name='Barrier_'+str(uuid.uuid4()),silence=False):
         self.barrier = threading.Barrier(parties)
         self.name = name
+        self.silence = silence
         # custom_log(current_time(),  self.name, f"Barrier {self.name} created with {parties} parties")
 
     def wait(self):
         # thread_name = threading.current_thread().name
         barrier_index = self.barrier.wait()
-        custom_log(current_time(),  self.name,  f"Barrier {self.name} wait, index: {barrier_index}")
+        if not self.silence:
+            custom_log(current_time(),  self.name,  f"Barrier {self.name} wait, index: {barrier_index}")
         return barrier_index
 
     def reset(self):
         self.barrier.reset()
-        custom_log(current_time(),  self.name, f"Barrier {self.name} reset")
+        if not self.silence:
+            custom_log(current_time(),  self.name, f"Barrier {self.name} reset")
 
     def abort(self):
         self.barrier.abort()
-        custom_log(current_time(), self.name,  f"Barrier {self.name} aborted")
+        if not self.silence:
+            custom_log(current_time(), self.name,  f"Barrier {self.name} aborted")
 
     def parties(self):
         return self.barrier.parties
