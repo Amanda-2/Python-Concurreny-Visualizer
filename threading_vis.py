@@ -1,113 +1,73 @@
-#!/usr/bin/env/ python
+#!/usr/bin/env python
 
-#----------------------------------------------------------------------
 # visualize.py
-# Authors: Amanda Sparks and Luke Shannon
-#----------------------------------------------------------------------
-
+import argparse
 import threading
-import datetime
 import time
+import datetime
+import logging
+from logging_config import setup_logging
 
-class main_thread():
+# Setup logging using command-line arguments
+def get_args():
+    parser = argparse.ArgumentParser(description='Setup logging for the application.')
+    parser.add_argument('--file', type=str, default='Banking.log', help='Log file name')
+    parser.add_argument('--port', type=int, default=12345, help='Socket logging port')
+    return parser.parse_args()
+
+args = get_args()
+logger = setup_logging(args.file, args.port)
+
+def current_time():
+    return time.time_ns()#datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+
+class MainThread:
     def __init__(self):
         self.thread = threading.current_thread()
-        # self.file = open("MainThread", "a")
-        # open 
-        now = datetime.datetime.now().strftime('%H:%M:%S')
-        self.file.write(now + " Main thread initialized\n")
-        self.printArray=[]
-        self.watchThread = threading.Thread(target=watch_thread, args=(self,))
-        self.watchThread.start()
+        logger.info(f"{current_time()}, {self.thread.name}: {self.thread.ident}, 'Main thread initialized'")
 
-class create_thread():
-    def __init__(self, name:str, target, args=()):
+    def watch_thread(self):
+        while self.watchThread.is_alive():
+            time.sleep(0.5)
+            logger.info(f"{current_time()}, {self.thread.name}: {self.watchThread.ident}, 'Executing'")
+
+        logger.info(f"{current_time()}, {self.thread.name}: {self.watchThread.ident}, 'Thread ended'")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        logger.info(f"{current_time()}, {self.thread.name}: {self.thread.ident}, 'Main thread ended'")
+
+def print(message):
+    logger.info(f"PRINT: {message}")
+
+class CreateThread:
+    def __init__(self, name, target, args=()):
         self.thread = threading.Thread(name=name, target=target, args=args)
-        self.thread.start()
-        self.printArray = []
-        self.file = open(self.thread.name, "a")
-        now = datetime.datetime.now().strftime('%H:%M:%S')
-        self.file.write(now + " 0 Thread initialized\n")
-        self.file.write(now + " 1 ID: " + str(self.thread.ident) + "\n")
-        self.file.write(now + " 2 Name of function: " + self.thread.name + "\n")
-        self.file.flush()
-
-        self.watchThread = threading.Thread(target=watch_thread, args=(self,))
-        self.watchThread.start()
 
     def join(self):
         self.thread.join()
+    
+    def start(self):
+        self.thread.start()
+        logger.info(f"{current_time()}, {self.thread.name}: {self.thread.ident}, 'Thread started'")
 
-def watch_thread(thread: create_thread):
-
-    while(thread.thread.is_alive()):
-        time.sleep(0.5)
-
-        now = datetime.datetime.now().strftime('%H:%M:%S')
-        thread.printArray.append(now + " Executing\n")
-
-    now = datetime.datetime.now().strftime('%H:%M:%S')
-    thread.printArray.append(now + " Thread ended at time " + now + "\n")
-    thread.file.flush()
-    for line in thread.printArray:
-        thread.file.write(line)
-    thread.file.flush()
-    thread.file.close()
-
-class lock():
+class Lock:
     def __init__(self, name):
         self.lock = threading.Lock()
-        now = datetime.datetime.now().strftime('%H:%M:%S')
-        threadName = str(threading.currentThread().getName())
         self.name = name
-        file = open(threadName, "a")
-        creationMsg = now + " Lock with name " + self.name + " created by "
-        creationMsg += threadName + "\n"
-        file.write(creationMsg)
-        file.flush()
-        file.close()
+        thread_name = threading.current_thread().name
+        logger.info(f"{current_time()}, {thread_name}: {threading.current_thread().ident}, 'Lock {self.name} created'")
 
     def acquire(self):
-        currentThread = str(threading.currentThread().getName())
-        now = datetime.datetime.now().strftime('%H:%M:%S')
-        msg = now + " 3 Lock with name " + self.name + " requested by "
-        msg += currentThread + "\n"
-        file = open(currentThread, "a")
-        file.write(msg)
-        file.flush()
-        
+        thread_name = threading.current_thread().name
+        logger.info(f"{current_time()}, {thread_name}: {threading.current_thread().ident}, 'Lock {self.name} acquire request'")
         self.lock.acquire()
-        now = datetime.datetime.now().strftime('%H:%M:%S')
-        msg = now + " 4 Lock with name " + self.name + " acquired by "
-        msg += currentThread + "\n"
-        file.write(msg)
-        file.flush()
-        file.close()
+        logger.info(f"{current_time()}, {thread_name}: {threading.current_thread().ident}, 'Lock {self.name} acquired'")
 
     def release(self):
-        now = datetime.datetime.now().strftime('%H:%M:%S')
-        currentThread = str(threading.currentThread().getName())
-        msg = now + " 5 Lock with name " + self.name + " attempted release by "
-        msg += currentThread + "\n"
-        file = open(currentThread, "a")
-        file.write(msg)
-        file.flush()
-        
+        thread_name = threading.current_thread().name
+        logger.info(f"{current_time()}, {thread_name}: {threading.current_thread().ident}, 'Lock {self.name} release request'")
         self.lock.release()
-        now = datetime.datetime.now().strftime('%H:%M:%S')
-        msg = now + " 6 Lock with name " + self.name + " released by "
-        msg += currentThread + "\n"
-        file.write(msg)
-        file.flush()
-        file.close()
-
-def filesort(filename: str):
-    file = open(filename, "r")
-    data = file.readlines()
-    file.close()
-    file = open(filename, "w")
-    data.sort()
-    for line in data:
-        file.write(line)
-        file.flush()
-    file.close()
+        logger.info(f"{current_time()}, {thread_name}: {threading.current_thread().ident}, 'Lock {self.name} released'")

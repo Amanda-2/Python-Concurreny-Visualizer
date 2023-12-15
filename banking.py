@@ -1,43 +1,45 @@
-#!/usr/bin/env/ python
-
-#----------------------------------------------------------------------
-# banking.py
-# Authors: Amanda Sparks and Luke Shannon
-#----------------------------------------------------------------------
-
-# Code adapted from
-# https://www.educative.io/answers/what-are-locks-in-python
-import ConcurrencyVis
-import visualize
+import threading_vis as visualize
 import time
-import threading
 
-main = visualize.main_thread()
-# lock = visualize.lock("depositLock")
-lock = visualize.lock("depositLock")
+# Initialize global variables
 deposit = 100
+deposit_lock = visualize.Lock("depositLock")
 
 def add_profit():
-    global deposit
+    global deposit, deposit_lock
     for x in range(10):
-        lock.acquire()
-        time.sleep(0.5)
+        deposit_lock.acquire()
+        time.sleep(0.1)
         deposit = deposit + 10
-        lock.release()
+        deposit_lock.release()
 
 def deduct_bill():
-    global deposit
+    global deposit, deposit_lock
     for x in range(10):
-        lock.acquire()
+        deposit_lock.acquire()
+        time.sleep(0.1)
         deposit = deposit - 10
-        lock.release()
+        deposit_lock.release()
 
-add_thread = visualize.create_thread(name="add_profit", target=add_profit)
-dep_thread = visualize.create_thread(name="deduct_bill", target=deduct_bill)
+def main():
+    with visualize.MainThread():
+        visualize.print("Starting banking.py")
 
-add_thread.join()
-dep_thread.join()
-print(deposit)
+        global deposit, deposit_lock
 
-# print(lock.finalArray)
-# lock.close()
+        add_thread = visualize.CreateThread(name="add_profit", target=add_profit)
+        dep_thread = visualize.CreateThread(name="deduct_bill", target=deduct_bill)
+
+        add_thread.start()
+        dep_thread.start()
+
+        visualize.print("Middle of banking.py, threads started")
+
+        add_thread.join()
+        dep_thread.join()
+
+        print(deposit)
+        visualize.print(f"End of banking.py, final deposit: {deposit}")
+
+if __name__ == "__main__":
+    main()

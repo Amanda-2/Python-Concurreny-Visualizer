@@ -1,0 +1,25 @@
+1702600157028286000, oven_lock, 8641634944, Lock 'oven_lock' created
+1702600157028426000, 8641634944, 8641634944, Main thread initialized
+1702600157028619000, 13017305088, 8641634944, 'Chef1' thread started
+1702600157028710000, 13034094592, 8641634944, 'Chef2' thread started
+1702600157028755000, dish_ready_condition, 8641634944, Condition dish_ready_condition lock acquired by thread
+1702600157028780000, dish_ready_condition, 8641634944, Condition dish_ready_condition wait
+1702600157529189000, oven_lock, 13034094592, Lock 'oven_lock' acquired
+1702600158533592000, oven_lock, 13034094592, Lock 'oven_lock' released
+1702600158533790000, oven_lock, 13017305088, Lock 'oven_lock' acquired
+1702600158533869000, dish_ready_condition, 13034094592, Condition dish_ready_condition lock acquired by thread
+1702600158533947000, dish_ready_condition, 13034094592, Condition dish_ready_condition notify
+1702600158533998000, dish_ready_condition, 13034094592, Condition dish_ready_condition lock released by thread
+1702600158534114000, dish_ready_condition, 8641634944, Condition dish_ready_condition lock released by thread
+1702600159535178000, oven_lock, 13017305088, Lock 'oven_lock' released
+1702600159535412000, meal_ready_event, 8641634944, Event meal_ready_event set
+1702600159535542000, meal_ready_event, 13034094592, Event meal_ready_event wait, result: True
+1702600159535805000, dish_ready_condition, 13017305088, Condition dish_ready_condition lock acquired by thread
+1702600159535924000, dish_ready_condition, 13017305088, Condition dish_ready_condition notify
+1702600159535953000, dish_ready_condition, 13017305088, Condition dish_ready_condition lock released by thread
+1702600159535975000, meal_ready_event, 13017305088, Event meal_ready_event wait, result: True
+1702600159536007000, plating_barrier, 13017305088, Barrier plating_barrier wait, index: 1
+1702600159536047000, plating_barrier, 13034094592, Barrier plating_barrier wait, index: 0
+1702600159536115000, 13017305088, 8641634944, 'Chef1' thread joined
+1702600159536174000, 13034094592, 8641634944, 'Chef2' thread joined
+1702600159536199000, 8641634944, 8641634944, Main thread ended

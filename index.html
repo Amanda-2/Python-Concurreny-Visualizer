@@ -6,6 +6,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.9/build/dat.gui.min.js"></script>
+    <!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"
         integrity="sha512-+Ru50BzEpZjlFzVnjSmJfYFPFfY2hS0Kjlu/IvqaJoux7maF5lJrRVUJWJ2LevPls7rd242GLbWEt+zAo4OVVQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -33,9 +34,25 @@
     <div id="tooltip"
         style="position: absolute; display: none; background: white; border: 1px solid black; padding: 5px; pointer-events: none;">
     </div>
+
+    <!-- <div id="log-container">Log Messages:</div>
+    <script>
+        // Function to fetch and display log messages
+        function fetchLogs() {
+            $.getJSON('/logs', function (data) {
+                $('#log-container').html(data.join('<br>'));
+            });
+        }
+
+        // Poll for new log messages every second
+        setInterval(fetchLogs, 1000);
+    </script> -->
+
     <script type="module">
         import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        // import { FlyControls } from 'three/addons/controls/FlyControls.js';
+        import { ArcballControls } from 'three/addons/controls/ArcballControls.js';
+        // import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { CatmullRomCurve3, TubeGeometry, MeshBasicMaterial, Mesh } from 'three';
 
         const scene = new THREE.Scene();
@@ -49,9 +66,33 @@
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap; // You can experiment with different types
 
+        const container = document.getElementById('container');
+        const tooltip = document.getElementById('tooltip');
+
         document.getElementById('container').appendChild(renderer.domElement);
 
-        const controls = new OrbitControls(camera, renderer.domElement);
+        // const controls = new FlyControls(camera, renderer.domElement);
+        // // const controls = new OrbitControls(camera, renderer.domElement);
+
+        // // Configure the controls
+        // controls.movementSpeed = 1;
+        // controls.domElement = container;
+        // controls.rollSpeed = Math.PI / 24;
+        // controls.autoForward = false;
+        // controls.dragToLook = true;
+
+
+        const controls = new ArcballControls(camera, renderer.domElement, scene);
+
+        controls.addEventListener('change', function () {
+
+            renderer.render(scene, camera);
+
+        });
+
+        //controls.update() must be called after any manual changes to the camera's transform
+        // camera.position.set(0, 20, 100);
+        controls.update();
 
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
@@ -60,11 +101,11 @@
         const gui = new dat.GUI();
         const params = {
             lineThickness: 3,
-            animationSpeed: 1,
+            animationSpeed: 10,
             currentTime: 0
         };
         gui.add(params, 'lineThickness', 1, 10)
-        gui.add(params, 'animationSpeed', 0.1, 5);
+        gui.add(params, 'animationSpeed', 0, 100);
         let currentTimeControl = gui.add(params, 'currentTime', 0, 10);
         currentTimeControl.onChange(() => {
             // clearScene();
@@ -110,20 +151,78 @@
             directionalLight.shadow.camera.near = 0.5; // Default
             directionalLight.shadow.camera.far = 500; // Default
         }
-
+        let duration = 0
+        let earliestTime = Infinity;
+        let latestTime = -Infinity;
         function createVisualization(data) {
-            const lines = data.split('\n');
+            let eventLines = data.split('\n');
             let events = {};
 
+            // Set a random seed for reproducibility
+            Math.seedrandom('seed');
+
+            let idCoordinates = {};  // Store initial x, z for each ID
             // Parse and organize data by ID
-            lines.forEach(line => {
-                const [time, id, x, y, z, text] = line.split(',');
+            eventLines = eventLines.filter(line => line.trim() !== '' && !line.startsWith('PRINT:'));
+            eventLines = eventLines.sort((a, b) => {
+                const [aDateTime, aId] = a.split(', ');
+                const [bDateTime, bId] = b.split(', ');
+                return aDateTime - bDateTime;
+            })
+            eventLines = eventLines.map((line, i) => {
+                const [dateTime, myid, id, text] = line.split(', ');
+                let time = i
+                earliestTime = Math.min(earliestTime, time);
+                latestTime = Math.max(latestTime, time);
+                return { time, myid, id, text }
+            })
+
+            eventLines.forEach((obj, i) => {
+                let { time, myid, id, text } = obj
+                // const [dateTime, myid, id, text] = line.split(', ');
+                time = time / latestTime * 10
+                // earliestTime = Math.min(earliestTime, time);
+                // latestTime = Math.max(latestTime, time);
+
+                if (!idCoordinates[id]) {
+                    // Generate x and z in a circle around the origin
+                    idCoordinates[id] = {
+                        x: i ? Math.cos(i / eventLines.length * 6.28) * 5 : 0,
+                        z: i ? Math.sin(i / eventLines.length * 6.28) * 5 : 0
+                    };
+                }
+
+                // Calculate y based on time step
+                // console.log(time)
+                // const y = 10
+
                 if (!events[id]) {
                     events[id] = [];
                 }
-                events[id].push({ time: parseFloat(time), point: new THREE.Vector3(parseFloat(x), parseFloat(y), parseFloat(z)), text });
-            });
+                if (!events[myid]) {
+                    events[myid] = []
+                }
 
+                const { x, z } = idCoordinates[id];
+                events[id].push({ time, point: new THREE.Vector3(x, time - 5, z), text });
+                events[myid].push({ time, point: new THREE.Vector3(x, time - 5, z), text });
+            });
+            latestTime = 10
+            // console.log(events)
+            // // for every event in every event[id], sort by time and change y based on time
+            // Object.keys(events).forEach(id => {
+            //     // events[id].sort((a, b) => a.time - b.time);
+            //     events[id].forEach((event, index) => {
+            //         event.point.y = (event.time - earliestTime) / (latestTime - earliestTime) * 10;
+            //     });
+            // });
+            // console.log(events)
+            // Update currentTimeControl range based on the earliest and latest times
+            duration = latestTime - earliestTime;
+            // params.currentTime = earliestTime;
+            currentTimeControl.min(earliestTime).max(latestTime);
+
+            // console.log(events)
             // Sort events by time for each ID and create geometries
             clearScene();
             Object.keys(events).forEach(id => {
@@ -144,32 +243,52 @@
                 return `#${color.toString(16).padStart(6, '0')}`; // Convert to hexadecimal format
             }
 
-            // Interpolate the position for the last point of the tube
-            let lastPointIndex = eventData.findIndex(event => event.time > params.currentTime);
-            lastPointIndex = (lastPointIndex === -1) ? eventData.length - 1 : Math.max(0, lastPointIndex - 1);
-
-            const points = eventData.slice(0, lastPointIndex + 1).map(event => event.point);
-            if (lastPointIndex < eventData.length - 1) {
-                const nextPoint = eventData[lastPointIndex + 1].point;
-                const currentPoint = eventData[lastPointIndex].point;
-                let alpha = (params.currentTime - eventData[lastPointIndex].time) / (eventData[lastPointIndex + 1].time - eventData[lastPointIndex].time);
-                alpha = Math.max(0, alpha)
-                const interpolatedPoint = currentPoint.clone().lerp(nextPoint, alpha);
-                points.push(interpolatedPoint);
+            let events = []
+            for (let i = 0; i < eventData.length; i++) {
+                const event = eventData[i];
+                // add if its not equal to the last point
+                if (events.length > 0 && events[events.length - 1].point.equals(event.point)) {
+                    continue;
+                }
+                events.push(event)
+                if (currentTimeControl.getValue() < event.time) {
+                    break;
+                }
             }
 
-            const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0);
-            const tubeGeometry = new THREE.TubeGeometry(curve, points.length * 2, params.lineThickness / 100, 8, false);
             const tubeMaterial = new THREE.MeshPhongMaterial({
                 color: getRandomColor(id)
                 // specular: 0x050505,
                 // shininess: 100
             });
-            const tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
-            tube.userData = { text: "ID: " + id };
-            tube.castShadow = true;
-            tube.receiveShadow = true;
-            scene.add(tube);
+            // let points = eventData.filter(event => event.time <= params.currentTime).map(event => event.point);
+            let points = events.map(event => event.point);
+            if (events.length > 1) {
+                let alpha = Math.min(Math.max(1 - (currentTimeControl.getValue() - events[events.length - 2].time) / (events[events.length - 1].time - events[events.length - 2].time), 0), 1)
+                points[points.length - 1] = points[points.length - 1].clone().lerp(points[points.length - 2], alpha)
+                // const material = new THREE.LineBasicMaterial({
+                //     color: 0x0000ff
+                // });
+
+                // const geometry = new THREE.BufferGeometry().setFromPoints(points);
+
+                // const line = new THREE.Line(geometry, material);
+                // scene.add(line)
+                // repeat each point twice
+                points = points.flatMap(point => [point, point]);
+
+                const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal', 1);
+                const tubeGeometry = new THREE.TubeGeometry(curve, points.length * 2, params.lineThickness / 100, 8, false);
+                const tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
+                tube.userData = {
+                    text: "Object in which:<br><br>" + eventData.reduce(
+                        (acc, curr) => acc + curr.text + "<br>", "")
+                };
+                tube.castShadow = true;
+                tube.receiveShadow = true;
+                scene.add(tube);
+            }
+
 
             // Create spheres only for past events
             eventData.forEach(event => {
@@ -178,7 +297,7 @@
                     const sphereMaterial = new THREE.MeshPhongMaterial({ color: tubeMaterial.color });
                     const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
                     sphere.position.copy(event.point);
-                    sphere.userData = { text: event.text };
+                    sphere.userData = { text: event.text, time: event.time };
                     sphere.castShadow = true;
                     sphere.receiveShadow = true;
                     scene.add(sphere);
@@ -189,75 +308,61 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // Update currentTime based on animationSpeed
-            params.currentTime += params.animationSpeed * 0.01;
+            const now = Date.now();
+            const delta = (now - lastUpdate) / 1000; // Time in seconds since last update
+            lastUpdate = now;
 
-            // Loop currentTime within the range 0 to 10
-            if (params.currentTime > 10 || params.currentTime < 0) {
-                params.animationSpeed *= -1; // Reverse the direction when reaching the boundary
-            }
+            // Adjust the animation speed (e.g., 1% of total duration per second)
+            // const animationStep = delta * duration * params.animationSpeed / 100;
+            const animationStep = delta * duration * 0.1 * params.animationSpeed / 25;
+
+            // Update currentTime based on the animation speed
+            params.currentTime += animationStep;
+            // if (params.currentTime > latestTime) {
+            //     params.currentTime = earliestTime; // Loop back to the start
+            // }
 
             // Update currentTime in GUI and refresh scene
             currentTimeControl.setValue(params.currentTime);
-
-            controls.update();
+            // controls.update(0.3);
             renderer.render(scene, camera);
+            tt();
             // log items
         }
 
-        let selectedObject = null;
-        let originalColor = null;
-        function onMouseMove(event) {
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+        function tt() {
+            // mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            // mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(scene.children, true);
 
             if (intersects.length > 0) {
-                if (selectedObject !== intersects[0].object) {
-                    if (selectedObject && originalColor !== null) {
-                        selectedObject.material.color.set(originalColor);
-                    }
-
-                    selectedObject = intersects[0].object;
-                    originalColor = selectedObject.material.color.getHex();
-                    selectedObject.material.color.set(0xff0000);
-
-                    // Update tooltip position and content
-                    updateTooltip(selectedObject);
-
-                }
+                // Aggregate text from all intersected objects sorted by time
+                const tooltipText = intersects
+                    .map(intersected => intersected.object.userData.text)
+                    .sort((a, b) => b.time - a.time)
+                    .filter((text, index, self) => self.indexOf(text) === index)
+                    .join('<br>');
+                // filter out duplicate
+                // Update tooltip position and content
+                updateTooltip(mouse.x, mouse.y, tooltipText);
             } else {
-                if (selectedObject && originalColor !== null) {
-                    selectedObject.material.color.set(originalColor);
-                    selectedObject = null;
-                    originalColor = null;
-                    tooltip.style.display = 'none';
-                }
+                tooltip.style.display = 'none';
             }
-            tooltip.style.left = event.clientX + 20 + 'px';
-            tooltip.style.top = event.clientY + 20 + 'px';
+        }
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
         }
         window.addEventListener('mousemove', onMouseMove, false);
 
-        function updateTooltip(object) {
-            const vector = new THREE.Vector3();
-            object.getWorldPosition(vector);
-            vector.project(camera);
-
-            vector.x = (vector.x * 0.5 + 0.5) * container.clientWidth;
-            vector.y = -(vector.y * 0.5 - 0.5) * container.clientHeight;
-
-
+        function updateTooltip(mouseX, mouseY, text) {
             tooltip.style.display = 'block';
-            tooltip.style.left = `${vector.x}px`;
-            tooltip.style.top = `${vector.y}px`;
-            tooltip.innerHTML = object.userData.text;
+            tooltip.style.left = (mouse.x + 1) / 2 * window.innerWidth + 20 + 'px';
+            tooltip.style.top = (-mouse.y + 1) / 2 * window.innerHeight + 20 + 'px';
+            tooltip.innerHTML = text;
         }
-
-        const container = document.getElementById('container');
-        const tooltip = document.getElementById('tooltip');
-
 
 
         window.addEventListener('resize', onWindowResize, false);

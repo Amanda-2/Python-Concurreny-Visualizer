@@ -10,6 +10,7 @@ parser.add_argument("file", help="The file to be visualized")
 
 def main():
     # get 
+    pass
 
 if __name__ == "__main__":
     main()
