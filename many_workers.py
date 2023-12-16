@@ -24,7 +24,7 @@ def main(n, sleep_time):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run worker threads with shared lock.')
-    parser.add_argument('--num_workers', type=int, default=500, help='Number of worker threads')
+    parser.add_argument('--num_workers', type=int, default=20, help='Number of worker threads')
     parser.add_argument('--sleep_time', type=int, default=0.01, help='Sleep time for each worker (in seconds)')
     args = parser.parse_args()
 
